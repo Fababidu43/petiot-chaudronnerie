@@ -513,8 +513,9 @@ h6 {
 }
 
 .footer .social-links a:hover {
-  color: var(--contrast-color);
-  background-color: var(--accent-color);
+  color: var(--accent-color); /* Texte devient vert */
+  background-color: #ffffff; /* Fond devient blanc */
+  transform: scale(1.1); /* Agrandissement léger au survol */
 }
 
 .footer h4 {
@@ -566,49 +567,6 @@ h6 {
 .footer .footer-contact p {
   margin-bottom: 5px;
   color: #ffffff;
-}
-
-.footer .footer-newsletter .newsletter-form {
-  margin-top: 30px;
-  margin-bottom: 15px;
-  padding: 6px 8px;
-  position: relative;
-  border-radius: 4px;
-  border: 1px solid color-mix(in srgb, var(--default-color), transparent 80%);
-  display: flex;
-  background-color: color-mix(in srgb, var(--dark-background), white 15%);
-  transition: 0.3s;
-}
-
-.footer .footer-newsletter .newsletter-form:focus-within {
-  border-color: var(--accent-color);
-}
-
-.footer .footer-newsletter .newsletter-form input[type=email] {
-  border: 0;
-  padding: 4px;
-  width: 100%;
-  background-color: color-mix(in srgb, var(--dark-background), white 15%);
-  color: #ffffff;
-}
-
-.footer .footer-newsletter .newsletter-form input[type=email]:focus-visible {
-  outline: none;
-}
-
-.footer .footer-newsletter .newsletter-form input[type=submit] {
-  border: 0;
-  font-size: 16px;
-  padding: 0 20px;
-  margin: -7px -8px -7px 0;
-  background: var(--accent-color);
-  color: #ffffff;
-  transition: 0.3s;
-  border-radius: 0 4px 4px 0;
-}
-
-.footer .footer-newsletter .newsletter-form input[type=submit]:hover {
-  background: var(--secondary-green);
 }
 
 .footer .copyright {
@@ -783,7 +741,7 @@ section,
   margin: 0;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: var(--accent-color);
+  color: white;
   position: relative;
 }
 
@@ -863,13 +821,20 @@ section,
 .hero .icon-box {
   padding: 30px 20px;
   transition: ease-in-out 0.3s;
-  border: 1px solid color-mix(in srgb, var(--default-color), transparent 70%);
+  border: 1px solid rgba(255, 255, 255, 0.2); /* Bordure fine, discrète */
   height: 100%;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+
+  /* Nouveau fond transparent avec une légère couleur */
+  background-color: rgba(48, 54, 66, 0.8); /* Fond sombre avec opacité pour un contraste avec le fond noir/blanc */
+  border-radius: 8px; /* Coins arrondis pour plus d'élégance */
+
+  /* Ajout d'une ombre pour faire ressortir le carré */
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .hero .icon-box i {
@@ -893,7 +858,9 @@ section,
 }
 
 .hero .icon-box:hover {
-  border-color: var(--accent-color);
+  background-color: rgba(255, 255, 255, 0.9); /* Vert plus intense au survol */
+  transform: translateY(-10px); /* Légère élévation lors du survol */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4); /* Augmenter l'ombre lors du survol */
 }
 
 .hero .icon-box:hover h3 a {
@@ -913,16 +880,86 @@ section,
 /*--------------------------------------------------------------
 # About Section
 --------------------------------------------------------------*/
+.about .content h3::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -10px;
+  width: 50px;
+  height: 3px;
+  background-color: var(--accent-color); /* Ligne colorée en vert pour renforcer le titre */
+}
+
+.about .content p {
+  font-size: 1.1rem;
+  font-weight: 300;
+  color: #ffffff; /* Texte blanc */
+  margin-bottom: 20px;
+  line-height: 1.6; /* Meilleure lisibilité avec un interligne plus grand */
+}
+
+.about .content ul li i {
+  font-size: 1.5rem;
+  color: var(--accent-color); /* Couleur verte pour les icônes */
+  margin-right: 10px;
+}
+
+.about .content ul li span {
+  font-size: 1.1rem;
+  color: #ffffff; /* Texte blanc */
+}
+
+/* Ajout d'une animation pour faire apparaître le contenu en douceur */
+.about .content {
+  animation: fadeInUp 1s ease-out; /* Animation d'apparition fluide */
+}
+
+@keyframes fadeInUp {
+  from {
+      opacity: 0;
+      transform: translateY(20px);
+  }
+  to {
+      opacity: 1;
+      transform: translateY(0);
+  }
+}
+
+.about img {
+  display: block; /* S'assurer que l'image ne dépasse pas des bordures du parent */
+  max-width: 100%; /* S'assurer que l'image est responsive */
+  height: auto; /* Respecter le ratio original de l'image */
+  
+  /* Cadre élégant autour de l'image */
+  border: 4px solid rgba(255, 255, 255, 0.8); /* Bordure blanche avec une opacité pour s'intégrer au fond vert */
+  border-radius: 12px; /* Coins arrondis pour un effet moderne */
+
+  /* Ajout d'une ombre pour créer de la profondeur */
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2); /* Ombre subtile pour que l'image ressorte bien */
+
+  /* Ajout d'un effet de survol pour rendre l'image interactive */
+  transition: transform 0.3s ease, box-shadow 0.3s ease; /* Transition pour l'effet au survol */
+}
+
+.about img:hover {
+  transform: scale(1.05); /* Agrandir légèrement l'image au survol */
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3); /* Ombre plus forte au survol */
+}
+
+
 .about {
-  background-color: var(--light-green);
+  background-color: rgba(48, 54, 66, 0.8);
   color: #ffffff;
   padding: 60px 0;
 }
 
 .about .content h3 {
-  font-size: 1.75rem;
+  font-size: 2rem; /* Agrandir la taille de l'en-tête */
   font-weight: 700;
-  color: #ffffff;
+  color: #ffffff; /* Garde le texte en blanc */
+  text-transform: uppercase; /* Met en majuscules pour plus de présence */
+  margin-bottom: 20px;
+  position: relative;
 }
 
 .about .content .fst-italic {
@@ -932,12 +969,15 @@ section,
 .about .content ul {
   list-style: none;
   padding: 0;
+  margin: 0;
 }
 
 .about .content ul li {
-  padding: 10px 0 0 0;
+  font-size: 1.1rem;
+  margin-bottom: 15px;
   display: flex;
   align-items: center;
+  color: #ffffff;
 }
 
 .about .content ul i {
@@ -955,7 +995,7 @@ section,
 # Services Section
 --------------------------------------------------------------*/
 #services {
-  background-color: var(--secondary-green);
+  background-color: rgba(48, 54, 66, 0.8);
   color: #ffffff;
   padding: 60px 0;
 }
@@ -1013,7 +1053,6 @@ section,
 --------------------------------------------------------------*/
 .call-to-action {
   padding: 80px 0;
-  position: relative;
   clip-path: inset(0);
   background-color: var(--dark-background);
   color: #ffffff;
@@ -1043,14 +1082,26 @@ section,
   z-index: 3;
 }
 
+/* Renforcement de l'overlay */
+.call-to-action:before {
+  content: "";
+  background: rgba(48, 54, 66, 0.85); /* Augmentation de l'opacité */
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+}
+
+/* Styles améliorés pour le titre */
 .call-to-action h3 {
   font-size: 28px;
   font-weight: 700;
-  color: var(--accent-color);
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Ombre noire semi-transparente */
 }
 
 .call-to-action p {
   color: #ffffff;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6); /* Ombre noire semi-transparente */
 }
 
 .call-to-action .cta-btn {
@@ -1077,89 +1128,76 @@ section,
 /*--------------------------------------------------------------
 # Portfolio Section
 --------------------------------------------------------------*/
+
+/* Styles pour la section portfolio */
 #portfolio {
-  background-color: var(--background-color);
+  background-color: rgba(48, 54, 66, 0.8);
   color: var(--default-color);
   padding: 60px 0;
 }
 
-.portfolio .portfolio-filters {
-  padding: 0;
-  margin: 0 auto 20px auto;
-  list-style: none;
-  text-align: center;
-}
-
-.portfolio .portfolio-filters li {
-  cursor: pointer;
-  display: inline-block;
-  padding: 8px 20px 10px 20px;
-  margin: 0;
-  font-size: 15px;
-  font-weight: 500;
-  line-height: 1;
-  margin-bottom: 5px;
-  border-radius: 4px;
-  transition: all 0.3s ease-in-out;
-  font-family: var(--heading-font);
-}
-
-.portfolio .portfolio-filters li:hover,
-.portfolio .portfolio-filters li.filter-active {
-  color: var(--contrast-color);
-  background-color: var(--accent-color);
-}
-
-.portfolio .portfolio-filters li:first-child {
-  margin-left: 0;
-}
-
-.portfolio .portfolio-filters li:last-child {
-  margin-right: 0;
-}
-
-@media (max-width: 575px) {
-  .portfolio .portfolio-filters li {
-    font-size: 14px;
-    margin: 0 0 10px 0;
-  }
-}
-
-.portfolio .portfolio-item {
+/* Styles pour chaque élément du portfolio */
+.portfolio-wrap {
   position: relative;
-  overflow: hidden;
+  overflow: hidden; /* Assure que l'élément ne dépasse pas */
+  border: 4px solid rgba(255, 255, 255, 0.8); /* Bordure blanche subtile */
+  border-radius: 12px; /* Coins arrondis */
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-.portfolio .portfolio-item .portfolio-info {
+/* Effet au survol de l'enveloppe du portfolio */
+.portfolio-wrap:hover {
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3); /* Augmentation de l'ombre au survol */
+  z-index: 2; /* Assure que l'élément est bien visible par-dessus les autres */
+}
+
+/* Styles pour l'image du portfolio */
+.portfolio-item img {
+  width: 100%;
+  height: auto;
+  transition: transform 0.3s ease; /* Transition fluide sur l'image */
+}
+
+/* Effet de survol sur l'image - l'image s'agrandit légèrement */
+.portfolio-wrap:hover img {
+  transform: scale(1.1); /* Agrandir légèrement l'image */
+}
+
+/* Informations du portfolio */
+.portfolio-info {
   opacity: 0;
   position: absolute;
-  left: 12px;
-  right: 12px;
-  bottom: -100%;
-  z-index: 3;
-  transition: all ease-in-out 0.5s;
-  background: rgba(75, 138, 48, 0.8); /* Vert semi-transparent */
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(75, 138, 48, 0.85); /* Fond semi-transparent vert */
   padding: 15px;
   color: #ffffff;
+  transition: opacity 0.5s ease-in-out, transform 0.5s ease-in-out;
+  transform: translateY(20px); /* Commence légèrement en bas */
 }
 
-.portfolio .portfolio-item .portfolio-info h4 {
+/* Affiche les informations du portfolio lors du survol */
+.portfolio-wrap:hover .portfolio-info {
+  opacity: 1;
+  transform: translateY(0); /* Ramène les infos en position normale */
+}
+
+/* Styles du texte dans les infos du portfolio */
+.portfolio-info h4 {
   font-size: 18px;
   font-weight: 600;
-  padding-right: 50px;
+  color: #ffffff;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); /* Ombre pour améliorer la lisibilité */
 }
 
-.portfolio .portfolio-item .portfolio-info p {
-  color: #ffffff;
+.portfolio-info p {
   font-size: 14px;
   margin-bottom: 0;
-  padding-right: 50px;
+  padding-right: 0;
+  color: #ffffff;
 }
 
-.portfolio .portfolio-item:hover .portfolio-info {
-  opacity: 1;
-  bottom: 0;
-}
 
 /*--------------------------------------------------------------
 # Stats Section
@@ -1195,13 +1233,13 @@ section,
 # Team Section
 --------------------------------------------------------------*/
 #team {
-  background-color: var(--dark-background);
+  background-color: rgba(48, 54, 66, 0.8);
   color: #ffffff;
   padding: 60px 0;
 }
 
 .team .team-member {
-  background-color: var(--surface-color);
+  background-color: rgba(48, 54, 66, 0.8);
   overflow: hidden;
   border-radius: 5px;
   box-shadow: 0px 2px 15px rgba(0, 0, 0, 0.1);
@@ -1243,8 +1281,9 @@ section,
 }
 
 .team .team-member .social a:hover {
-  color: var(--contrast-color);
-  background: var(--accent-color);
+  color: var(--accent-color); /* Texte devient vert */
+  background: #ffffff; /* Fond devient blanc */
+  transform: scale(1.1); /* Agrandissement léger au survol */
 }
 
 .team .team-member .social i {
@@ -1266,7 +1305,7 @@ section,
   display: block;
   font-size: 13px;
   font-weight: 400;
-  color: color-mix(in srgb, var(--default-color), transparent 40%);
+  color: color-mix(in srgb, white, transparent 40%);
 }
 
 .team .team-member:hover .social {
@@ -1278,7 +1317,7 @@ section,
 # Contact Section
 --------------------------------------------------------------*/
 #contact {
-  background-color: #3e6b24; /* Vert plus sombre pour augmenter le contraste */
+  background-color: rgba(48, 54, 66, 0.8); /* Vert plus sombre pour augmenter le contraste */
   color: #ffffff; /* Texte en blanc pour une lisibilité maximale */
 }
 
@@ -1288,9 +1327,17 @@ section,
 
 /* Amélioration des icônes dans Contact */
 .contact .info-item i {
-  color: #ffffff;
-  background-color: var(--accent-color); /* Garde la cohérence avec la couleur principale */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2); /* Ajout d'ombre pour plus de profondeur */
+  color: white;
+  background: var(--accent-color);
+  font-size: 20px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 4px;
+  transition: all 0.3s ease-in-out;
+  margin-right: 15px;
 }
 
 .contact .info-item h3 {
@@ -1345,30 +1392,14 @@ section,
 }
 
 .contact .php-email-form button[type=submit]:hover {
-  background: var(--secondary-green);
+  color: var(--accent-color); /* Texte devient vert */
+  background: #ffffff; /* Fond devient blanc */
+  transform: scale(1.05); /* Agrandissement léger au survol */
 }
 
 /*--------------------------------------------------------------
 # Additional Custom Styles
 --------------------------------------------------------------*/
-
-/* Cartes des Réalisations */
-.portfolio-wrap {
-  border: 2px solid var(--accent-color);
-  border-radius: 8px;
-  overflow: hidden;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.portfolio-wrap:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
-}
-
-.portfolio-info {
-  background-color: rgba(75, 138, 48, 0.8); /* Vert semi-transparent */
-  color: #ffffff;
-}
 
 /* Footer */
 .footer {
@@ -1427,7 +1458,7 @@ section,
 
 /* Améliorer la lisibilité des titres */
 h2, h3, h4, h5, h6, p {
-  color: #ffffff; /* Blanc pour contraster avec le fond vert foncé */
+  color: white; /* Blanc pour contraster avec le fond vert foncé */
   text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.3); /* Ombre pour faire ressortir le texte */
 }
 
@@ -1453,4 +1484,83 @@ h2, h3, h4, h5, h6, p {
 
 .col-xl-6.col-lg-8 {
   max-width: 100%; /* Ajuste la largeur pour permettre plus de place */
+}
+
+.about {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* Ombre douce sous la section about */
+  padding-bottom: 60px; /* Un peu d'espace avant la section suivante */
+}
+
+.services {
+  padding-top: 60px; /* Ajout d'espace en haut de la section services */
+}
+
+.portfolio {
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1); /* Ombre douce sous la section about */
+  padding-bottom: 60px; /* Un peu d'espace avant la section suivante */
+}
+
+.team {
+  padding-top: 60px; /* Ajout d'espace en haut de la section services */
+}
+
+/* Style général du service item */
+.services .service-item {
+  background-color: rgba(255, 255, 255, 0.1); /* Fond semi-transparent pour contraster avec le fond sombre */
+  border: 1px solid white; /* Bordure verte pour définir les éléments */
+  text-align: center;
+  padding: 80px 20px;
+  height: 100%;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 6px 10px rgba(0, 0, 0, 0.2); /* Ombre légèrement plus prononcée pour la profondeur */
+  border-radius: 12px; /* Coins arrondis pour un style moderne */
+  color: #ffffff; /* Garde le texte en blanc */
+}
+
+.services .service-item:hover {
+  background-color: rgba(255, 255, 255, 0.2); /* Fond légèrement plus clair au survol */
+  transform: translateY(-10px); /* Légère élévation pour l'effet de survol */
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.3); /* Ombre plus forte au survol */
+}
+
+/* Style de l'icône dans le service item */
+.services .service-item .icon {
+  background-color: #ffffff; /* Icônes sur fond blanc */
+  color: var(--accent-color); /* Couleur de l'icône en vert */
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); /* Ajout d'une ombre plus visible autour des icônes */
+  width: 64px;
+  height: 64px;
+  border-radius: 50%; /* Icônes en forme de cercle pour plus de cohérence visuelle */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 20px auto; /* Centrage de l'icône */
+  transition: all 0.3s ease-in-out;
+}
+
+/* Ajout d'un effet lumineux autour de l'icône au survol */
+.services .service-item:hover .icon {
+  background-color: var(--accent-color); /* L'icône devient verte au survol */
+  color: #ffffff; /* Icône en blanc pour contraste */
+  box-shadow: 0 8px 20px rgba(75, 138, 48, 0.6); /* Ajout d'une ombre verte lumineuse au survol */
+}
+
+/* Style du texte dans le service item */
+.services .service-item h3 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 15px;
+  color: #ffffff; /* Texte en blanc */
+  transition: color 0.3s ease;
+}
+
+.services .service-item:hover h3 {
+  color: #f0f0f0; /* Légèrement plus gris que le blanc */
+}
+
+.services .service-item p {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.8); /* Texte légèrement transparent pour le paragraphe */
+  line-height: 1.6;
+  margin-bottom: 0;
 }
