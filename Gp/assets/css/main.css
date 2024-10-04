@@ -638,13 +638,14 @@ h6 {
 
 .scroll-top i {
   font-size: 24px;
-  color: var(--contrast-color);
+  color: white;
   line-height: 0;
 }
 
 .scroll-top:hover {
-  background-color: var(--secondary-green);
-  color: var(--contrast-color);
+  background-color: #ffffff; /* Fond devient blanc */
+  color: var(--secondary-green); /* Texte devient vert */
+  transform: scale(1.1); /* Agrandissement léger au survol */
 }
 
 .scroll-top.active {
@@ -948,9 +949,11 @@ section,
 
 
 .about {
-  background-color: rgba(48, 54, 66, 0.8);
+  background: linear-gradient(135deg, rgba(48, 54, 66, 0.8), rgba(25, 29, 38, 0.9));
   color: #ffffff;
   padding: 60px 0;
+  border-bottom: 4px solid rgba(255, 255, 255, 0.2); /* Bordure en bas pour la transition */
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
 }
 
 .about .content h3 {
@@ -995,7 +998,7 @@ section,
 # Services Section
 --------------------------------------------------------------*/
 #services {
-  background-color: rgba(48, 54, 66, 0.8);
+  background: linear-gradient(135deg, rgba(48, 54, 66, 0.8), rgba(25, 29, 38, 0.9));
   color: #ffffff;
   padding: 60px 0;
 }
@@ -1131,9 +1134,10 @@ section,
 
 /* Styles pour la section portfolio */
 #portfolio {
-  background-color: rgba(48, 54, 66, 0.8);
+  background: radial-gradient(circle, rgba(48, 54, 66, 0.8), rgba(25, 29, 38, 0.9));
   color: var(--default-color);
   padding: 60px 0;
+  border-bottom: 4px solid rgba(255, 255, 255, 0.2); /* Bordure en bas pour la transition */
 }
 
 /* Styles pour chaque élément du portfolio */
@@ -1233,9 +1237,10 @@ section,
 # Team Section
 --------------------------------------------------------------*/
 #team {
-  background-color: rgba(48, 54, 66, 0.8);
+  background: radial-gradient(circle, rgba(48, 54, 66, 0.8), rgba(25, 29, 38, 0.9));
   color: #ffffff;
   padding: 60px 0;
+  border-bottom: 4px solid rgba(255, 255, 255, 0.2); /* Bordure en bas pour la transition */
 }
 
 .team .team-member {
@@ -1255,40 +1260,6 @@ section,
 .team .team-member .member-img {
   position: relative;
   overflow: hidden;
-}
-
-.team .team-member .social {
-  position: absolute;
-  left: 0;
-  bottom: 30px;
-  right: 0;
-  opacity: 0;
-  transition: ease-in-out 0.3s;
-  text-align: center;
-}
-
-.team .team-member .social a {
-  background: var(--accent-color);
-  color: #ffffff;
-  margin: 0 3px;
-  border-radius: 4px;
-  width: 36px;
-  height: 36px;
-  transition: ease-in-out 0.3s;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-}
-
-.team .team-member .social a:hover {
-  color: var(--accent-color); /* Texte devient vert */
-  background: #ffffff; /* Fond devient blanc */
-  transform: scale(1.1); /* Agrandissement léger au survol */
-}
-
-.team .team-member .social i {
-  font-size: 18px;
-  line-height: 0;
 }
 
 .team .team-member .member-info {
@@ -1317,7 +1288,7 @@ section,
 # Contact Section
 --------------------------------------------------------------*/
 #contact {
-  background-color: rgba(48, 54, 66, 0.8); /* Vert plus sombre pour augmenter le contraste */
+  background: radial-gradient(circle, rgba(48, 54, 66, 0.8), rgba(25, 29, 38, 0.9));
   color: #ffffff; /* Texte en blanc pour une lisibilité maximale */
 }
 
