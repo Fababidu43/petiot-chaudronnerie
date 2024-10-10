@@ -188,6 +188,9 @@ h6 {
   border-radius: 4px;
   transition: 0.3s;
   border: none;
+  display: inline-flex; /* Ajouté pour aligner l'icône et le texte */
+  align-items: center;
+  justify-content: center;
 }
 
 .header .btn-getstarted:hover,
@@ -195,6 +198,40 @@ h6 {
   background-color: var(--secondary-green);
   color: #ffffff;
 }
+
+    /* Conteneur du Bouton Téléphonique */
+    .btn-container {
+      position: relative;
+      display: inline-block; /* Pour que le conteneur s'aligne correctement */
+    }
+
+    /* Second Numéro Caché par Défaut */
+    .btn-container .secondary-number {
+      position: absolute;
+      top: 100%; /* Positionné juste en dessous du bouton principal */
+      left: 0;
+      margin-top: 5px; /* Petit espace entre les deux boutons */
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s;
+      z-index: 10; /* Assure que le second bouton est au-dessus des autres éléments */
+    }
+
+    /* Afficher le Second Numéro lors du Survol du Conteneur */
+    .btn-container:hover .secondary-number {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    /* Optionnel : Ajout de Transition Douce pour le Second Numéro */
+    .btn-container .secondary-number {
+      transition: opacity 0.3s, visibility 0.3s;
+    }
+
+    /* Ajustement de l'Espace entre l'Icône et le Texte */
+    .btn-container .btn-getstarted i {
+      margin-right: 8px;
+    }
 
 @media (max-width: 1200px) {
   .header .logo {
