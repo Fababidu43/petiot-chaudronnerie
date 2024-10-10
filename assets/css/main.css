@@ -71,9 +71,10 @@ body {
 }
 
 a {
-  color: var(--accent-color);
+  color: white;
   text-decoration: none;
   transition: 0.3s;
+  font-weight: bold;
 }
 
 a:hover {
