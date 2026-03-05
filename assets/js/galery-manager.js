@@ -5,7 +5,7 @@
 
 class GaleryManager {
   constructor() {
-    this.PASSWORD = 'PETIOT';
+    this.PASSWORD = 'FABIAN';
     this.STORAGE_KEY = 'petiot_galery_photos';
     this.photos = this.loadPhotos();
     this.currentPhotoIndex = 0;
