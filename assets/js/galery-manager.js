@@ -42,9 +42,7 @@ class GaleryManager {
     const url = new URL(this.API_URL, window.location.href);
     const headers = new Headers(options.headers || {});
 
-    if (method === 'GET') {
-      url.searchParams.set('action', action);
-    }
+    url.searchParams.set('action', action);
 
     if (this.authToken) {
       headers.set('Authorization', `Bearer ${this.authToken}`);

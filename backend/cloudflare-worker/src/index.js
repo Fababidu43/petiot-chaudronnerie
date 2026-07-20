@@ -152,6 +152,7 @@ async function githubRequest(env, path, options = {}) {
   const headers = new Headers(options.headers || {});
   headers.set('Authorization', `Bearer ${cfg.token}`);
   headers.set('Accept', 'application/vnd.github+json');
+  headers.set('User-Agent', 'petiot-chaudronnerie-gallery-worker');
   headers.set('X-GitHub-Api-Version', API_VERSION);
   if (options.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
@@ -434,7 +435,14 @@ export default {
     }
 
     const url = new URL(request.url);
-    const action = url.searchParams.get('action') || 'list';
+    const action = url.searchParams.get('action') || (request.method === 'POST' ? await (async () => {
+      try {
+        const formData = await request.clone().formData();
+        return String(formData.get('action') || 'list');
+      } catch {
+        return 'list';
+      }
+    })() : 'list');
 
     try {
       if (action === 'status') {
