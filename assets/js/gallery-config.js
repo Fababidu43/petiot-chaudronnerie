@@ -1,3 +1,3 @@
-// Remplace cette URL par celle de ton backend externe.
-// Exemple: https://petiot-gallery-api.your-subdomain.workers.dev/api/gallery
-window.GALLERY_API_URL = 'https://YOUR-WORKER-URL/api/gallery';
+// URL de ton backend Cloudflare Worker.
+// Le site ajoute automatiquement ?action=list / ?action=login / etc.
+window.GALLERY_API_URL = 'https://petiot-chaudronnerie-gallery.petiot-chaudronnerie-gallery.workers.dev';

@@ -3,11 +3,9 @@ main = "src/index.js"
 compatibility_date = "2026-07-20"
 
 [vars]
-GITHUB_OWNER = "YOUR_GITHUB_OWNER"
-GITHUB_REPO = "YOUR_GITHUB_REPO"
-GITHUB_BRANCH = "main"
+GITHUB_OWNER = "Fababidu43"
+GITHUB_REPO = "petiot-chaudronnerie"
+GITHUB_BRANCH = "master"
 GALLERY_PASSWORD = "FABIAN"
 
 # Set these in the Cloudflare dashboard or via `wrangler secret put`
-# GITHUB_TOKEN = "fine-grained token with Contents read/write"
-# GALLERY_SECRET = "random-long-secret-for-signing-tokens"
