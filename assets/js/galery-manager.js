@@ -1,18 +1,14 @@
 /**
  * Galery Manager
- * Gestion simple des photos
+ * Gestion des réalisations stockées sur le serveur
  */
 
 class GaleryManager {
   constructor() {
-    this.PASSWORD = 'FABIAN';
-    this.STORAGE_KEY = 'petiot_galery_photos';
-    this.DB_NAME = 'petiot_galery_db';
-    this.DB_VERSION = 1;
-    this.STORE_NAME = 'gallery_state';
+    this.API_URL = 'forms/gallery-api.php';
     this.photos = this.getDefaultPhotos();
     this.currentPhotoIndex = 0;
-    this.db = null;
+    this.isAuthenticated = false;
   }
 
   async init() {
@@ -22,160 +18,47 @@ class GaleryManager {
     this.createLightbox();
   }
 
-  // ===== LIGHTBOX =====
-  createLightbox() {
-    // Créer la lightbox HTML
-    if (!document.getElementById('photo-lightbox')) {
-      const lightboxHTML = `
-        <div id="photo-lightbox" class="photo-lightbox" style="display: none;">
-          <div class="lightbox-overlay" onclick="galeryManager.closeLightbox()"></div>
-          <div class="lightbox-container">
-            <button class="lightbox-close" onclick="galeryManager.closeLightbox()">✕</button>
-            <button class="lightbox-nav lightbox-prev" onclick="galeryManager.prevPhoto()">‹</button>
-            <div id="lightbox-content" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
-              <img id="lightbox-img" src="" alt="Photo agrandie" class="lightbox-img" style="display: none;">
-              <video id="lightbox-video" class="lightbox-video" style="display: none;" controls></video>
-            </div>
-            <button class="lightbox-nav lightbox-next" onclick="galeryManager.nextPhoto()">›</button>
-            <div class="lightbox-counter"><span id="current-index">1</span> / <span id="total-photos">1</span></div>
-          </div>
-        </div>
-      `;
-      document.body.insertAdjacentHTML('beforeend', lightboxHTML);
-    }
-  }
+  // ===== API =====
+  async apiRequest(action, options = {}) {
+    const { method = 'GET', body = null } = options;
+    const url = new URL(this.API_URL, window.location.href);
 
-  openLightbox(index) {
-    this.currentPhotoIndex = index;
-    const lightbox = document.getElementById('photo-lightbox');
-    const img = document.getElementById('lightbox-img');
-    const video = document.getElementById('lightbox-video');
-    const photo = this.photos[index];
-    
-    // Masquer les deux par défaut
-    img.style.display = 'none';
-    video.style.display = 'none';
-    
-    if (photo.type === 'video') {
-      video.src = photo.image;
-      video.style.display = 'block';
-    } else {
-      img.src = photo.image;
-      img.style.display = 'block';
-    }
-    
-    document.getElementById('current-index').textContent = index + 1;
-    document.getElementById('total-photos').textContent = this.photos.length;
-    lightbox.style.display = 'flex';
-    document.body.style.overflow = 'hidden';
-  }
-
-  closeLightbox() {
-    const lightbox = document.getElementById('photo-lightbox');
-    lightbox.style.display = 'none';
-    document.body.style.overflow = 'auto';
-  }
-
-  nextPhoto() {
-    const nextIndex = (this.currentPhotoIndex + 1) % this.photos.length;
-    this.openLightbox(nextIndex);
-  }
-
-  prevPhoto() {
-    const prevIndex = (this.currentPhotoIndex - 1 + this.photos.length) % this.photos.length;
-    this.openLightbox(prevIndex);
-  }
-
-  // ===== AUTHENTIFICATION =====
-  setupEventListeners() {
-    const adminLink = document.getElementById('admin-link');
-    const passwordSubmit = document.getElementById('password-submit');
-    const uploadForm = document.getElementById('upload-form');
-    const adminPassword = document.getElementById('admin-password');
-
-    if (adminLink) {
-      adminLink.addEventListener('click', (e) => {
-        e.preventDefault();
-        this.openAdminModal();
-      });
+    if (method === 'GET') {
+      url.searchParams.set('action', action);
     }
 
-    if (passwordSubmit) {
-      passwordSubmit.addEventListener('click', () => this.checkPassword());
-    }
-
-    if (adminPassword) {
-      adminPassword.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') this.checkPassword();
-      });
-    }
-
-    if (uploadForm) {
-      uploadForm.addEventListener('submit', (e) => {
-        e.preventDefault();
-        this.handlePhotoUpload();
-      });
-    }
-
-    // Clavier pour la lightbox
-    document.addEventListener('keydown', (e) => {
-      const lightbox = document.getElementById('photo-lightbox');
-      if (lightbox && lightbox.style.display !== 'none') {
-        if (e.key === 'ArrowRight') this.nextPhoto();
-        if (e.key === 'ArrowLeft') this.prevPhoto();
-        if (e.key === 'Escape') this.closeLightbox();
-      }
+    const response = await fetch(url.toString(), {
+      method,
+      body,
+      credentials: 'same-origin'
     });
-  }
 
-  openAdminModal() {
-    const modal = new bootstrap.Modal(document.getElementById('admin-modal'));
-    this.isAuthenticated = false;
-    document.getElementById('password-form').style.display = 'block';
-    document.getElementById('admin-panel').style.display = 'none';
-    document.getElementById('admin-password').value = '';
-    document.getElementById('password-error').style.display = 'none';
-    modal.show();
-  }
-
-  checkPassword() {
-    const password = document.getElementById('admin-password').value;
-    const errorMsg = document.getElementById('password-error');
-
-    if (password === this.PASSWORD) {
-      this.isAuthenticated = true;
-      document.getElementById('password-form').style.display = 'none';
-      document.getElementById('admin-panel').style.display = 'block';
-      errorMsg.style.display = 'none';
-      this.renderPhotosList();
-    } else {
-      errorMsg.style.display = 'block';
-      document.getElementById('admin-password').classList.add('is-invalid');
+    let data = null;
+    try {
+      data = await response.json();
+    } catch (error) {
+      throw new Error('Réponse serveur invalide');
     }
+
+    if (!response.ok || !data.success) {
+      throw new Error(data.message || `Erreur serveur (${response.status})`);
+    }
+
+    return data;
   }
 
-  // ===== GESTION DES PHOTOS =====
   async loadPhotos() {
-    const indexedPhotos = await this.loadPhotosFromIndexedDB();
-    if (Array.isArray(indexedPhotos)) {
-      this.photos = indexedPhotos;
-      return this.photos;
+    try {
+      const data = await this.apiRequest('list');
+      this.photos = Array.isArray(data.items) ? data.items : [];
+    } catch (error) {
+      console.error('Chargement de la galerie impossible:', error);
+      this.photos = this.getDefaultPhotos();
+      this.showAlert(
+        'Impossible de charger la galerie depuis le serveur. Le site affiche la version locale.',
+        'warning'
+      );
     }
-
-    const stored = localStorage.getItem(this.STORAGE_KEY);
-    if (stored) {
-      try {
-        const parsed = JSON.parse(stored);
-        this.photos = Array.isArray(parsed) ? parsed : this.getDefaultPhotos();
-        await this.savePhotosToIndexedDB(this.photos);
-        return this.photos;
-      } catch (e) {
-        console.error('Erreur lors du chargement des photos:', e);
-      }
-    }
-
-    this.photos = this.getDefaultPhotos();
-    return this.photos;
   }
 
   getDefaultPhotos() {
@@ -201,283 +84,396 @@ class GaleryManager {
     ];
   }
 
-  async savePhotos() {
-    let indexedDbSaved = false;
-    try {
-      await this.savePhotosToIndexedDB(this.photos);
-      indexedDbSaved = true;
-    } catch (idbError) {
-      console.warn('IndexedDB indisponible, fallback localStorage:', idbError);
+  // ===== LIGHTBOX =====
+  createLightbox() {
+    if (document.getElementById('photo-lightbox')) {
+      return;
     }
 
-    try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.photos));
-    } catch (localError) {
-      console.warn('Impossible de sauvegarder dans localStorage:', localError);
-      if (!indexedDbSaved) {
-        if (localError && localError.name === 'QuotaExceededError') {
-          alert('⚠️ Espace de stockage saturé !\n\nLe navigateur ne peut plus stocker ces médias.\n\nSolution :\n• Supprimez d\'anciennes photos/vidéos\n• Préférez des images plus légères');
-        }
-        throw localError;
-      }
-    }
+    const lightboxHTML = `
+      <div id="photo-lightbox" class="photo-lightbox" style="display: none;">
+        <div class="lightbox-overlay" onclick="galeryManager.closeLightbox()"></div>
+        <div class="lightbox-container">
+          <button class="lightbox-close" onclick="galeryManager.closeLightbox()">✕</button>
+          <button class="lightbox-nav lightbox-prev" onclick="galeryManager.prevPhoto()">‹</button>
+          <div id="lightbox-content" style="position: relative; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center;">
+            <img id="lightbox-img" src="" alt="Photo agrandie" class="lightbox-img" style="display: none;">
+            <video id="lightbox-video" class="lightbox-video" style="display: none;" controls></video>
+          </div>
+          <button class="lightbox-nav lightbox-next" onclick="galeryManager.nextPhoto()">›</button>
+          <div class="lightbox-counter"><span id="current-index">1</span> / <span id="total-photos">1</span></div>
+        </div>
+      </div>
+    `;
+
+    document.body.insertAdjacentHTML('beforeend', lightboxHTML);
   }
 
-  openDatabase() {
-    if (!('indexedDB' in window)) {
-      return Promise.reject(new Error('IndexedDB non supporté'));
+  openLightbox(index) {
+    if (!this.photos.length || !this.photos[index]) {
+      return;
     }
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+    this.currentPhotoIndex = index;
+    const lightbox = document.getElementById('photo-lightbox');
+    const img = document.getElementById('lightbox-img');
+    const video = document.getElementById('lightbox-video');
+    const photo = this.photos[index];
 
-      request.onupgradeneeded = () => {
-        const db = request.result;
-        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
-          db.createObjectStore(this.STORE_NAME);
-        }
-      };
+    img.style.display = 'none';
+    video.style.display = 'none';
+    img.removeAttribute('src');
+    video.removeAttribute('src');
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error || new Error('Erreur ouverture IndexedDB'));
-    });
+    if (photo.type === 'video') {
+      video.src = photo.image;
+      video.style.display = 'block';
+    } else {
+      img.src = photo.image;
+      img.style.display = 'block';
+    }
+
+    document.getElementById('current-index').textContent = index + 1;
+    document.getElementById('total-photos').textContent = this.photos.length;
+    lightbox.style.display = 'flex';
+    document.body.style.overflow = 'hidden';
   }
 
-  async loadPhotosFromIndexedDB() {
-    try {
-      const db = await this.openDatabase();
-      this.db = db;
+  closeLightbox() {
+    const lightbox = document.getElementById('photo-lightbox');
+    const video = document.getElementById('lightbox-video');
+    if (video) {
+      video.pause();
+      video.removeAttribute('src');
+      video.load();
+    }
+    if (lightbox) {
+      lightbox.style.display = 'none';
+    }
+    document.body.style.overflow = 'auto';
+  }
 
-      return await new Promise((resolve, reject) => {
-        const tx = db.transaction(this.STORE_NAME, 'readonly');
-        const store = tx.objectStore(this.STORE_NAME);
-        const request = store.get('photos');
+  nextPhoto() {
+    if (!this.photos.length) return;
+    const nextIndex = (this.currentPhotoIndex + 1) % this.photos.length;
+    this.openLightbox(nextIndex);
+  }
 
-        request.onsuccess = () => {
-          resolve(request.result || null);
-        };
+  prevPhoto() {
+    if (!this.photos.length) return;
+    const prevIndex = (this.currentPhotoIndex - 1 + this.photos.length) % this.photos.length;
+    this.openLightbox(prevIndex);
+  }
 
-        request.onerror = () => reject(request.error || new Error('Erreur lecture IndexedDB'));
-        tx.oncomplete = () => db.close();
-        tx.onerror = () => {
-          db.close();
-          reject(tx.error || new Error('Erreur transaction IndexedDB'));
-        };
+  // ===== AUTHENTIFICATION =====
+  setupEventListeners() {
+    const adminLink = document.getElementById('admin-link');
+    const passwordSubmit = document.getElementById('password-submit');
+    const uploadForm = document.getElementById('upload-form');
+    const adminPassword = document.getElementById('admin-password');
+
+    if (adminLink) {
+      adminLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        this.openAdminModal();
       });
-    } catch (e) {
-      return null;
     }
-  }
 
-  async savePhotosToIndexedDB(photos) {
-    const db = await this.openDatabase();
+    if (passwordSubmit) {
+      passwordSubmit.addEventListener('click', () => this.login());
+    }
 
-    return await new Promise((resolve, reject) => {
-      const tx = db.transaction(this.STORE_NAME, 'readwrite');
-      const store = tx.objectStore(this.STORE_NAME);
-      store.put(photos, 'photos');
+    if (adminPassword) {
+      adminPassword.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          this.login();
+        }
+      });
+    }
 
-      tx.oncomplete = () => {
-        db.close();
-        resolve();
-      };
+    if (uploadForm) {
+      uploadForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this.handlePhotoUpload();
+      });
+    }
 
-      tx.onerror = () => {
-        const error = tx.error || new Error('Erreur écriture IndexedDB');
-        db.close();
-        reject(error);
-      };
+    document.addEventListener('keydown', (e) => {
+      const lightbox = document.getElementById('photo-lightbox');
+      if (lightbox && lightbox.style.display !== 'none') {
+        if (e.key === 'ArrowRight') this.nextPhoto();
+        if (e.key === 'ArrowLeft') this.prevPhoto();
+        if (e.key === 'Escape') this.closeLightbox();
+      }
     });
   }
 
-  handlePhotoUpload() {
+  async openAdminModal() {
+    const modal = new bootstrap.Modal(document.getElementById('admin-modal'));
+    modal.show();
+
+    this.isAuthenticated = false;
+    document.getElementById('password-error').style.display = 'none';
+    document.getElementById('admin-password').classList.remove('is-invalid');
+    document.getElementById('admin-password').value = '';
+
+    try {
+      const status = await this.apiRequest('status');
+      if (status.authenticated) {
+        this.isAuthenticated = true;
+        this.showAdminPanel();
+      } else {
+        this.showPasswordForm();
+      }
+    } catch (error) {
+      console.error('Impossible de vérifier la session admin:', error);
+      this.showPasswordForm();
+    }
+  }
+
+  showPasswordForm() {
+    document.getElementById('password-form').style.display = 'block';
+    document.getElementById('admin-panel').style.display = 'none';
+  }
+
+  showAdminPanel() {
+    document.getElementById('password-form').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    this.renderPhotosList();
+  }
+
+  async login() {
+    const password = document.getElementById('admin-password').value.trim();
+    const errorMsg = document.getElementById('password-error');
+
+    if (!password) {
+      errorMsg.style.display = 'block';
+      errorMsg.textContent = 'Entrez le mot de passe';
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'login');
+    formData.append('password', password);
+
+    try {
+      await this.apiRequest('login', {
+        method: 'POST',
+        body: formData
+      });
+
+      this.isAuthenticated = true;
+      errorMsg.style.display = 'none';
+      document.getElementById('admin-password').classList.remove('is-invalid');
+      this.showAdminPanel();
+      this.showAlert('Connexion admin réussie.', 'success');
+    } catch (error) {
+      errorMsg.style.display = 'block';
+      errorMsg.textContent = 'Mot de passe incorrect';
+      document.getElementById('admin-password').classList.add('is-invalid');
+    }
+  }
+
+  // ===== GESTION DES PHOTOS =====
+  async handlePhotoUpload() {
     const fileInput = document.getElementById('photo-file');
-    const files = fileInput.files;
+    const files = Array.from(fileInput.files || []);
 
     if (files.length === 0) {
       alert('Veuillez sélectionner au moins une photo ou vidéo');
       return;
     }
 
+    if (!this.isAuthenticated) {
+      this.showAlert('Vous devez être connecté pour ajouter des médias.', 'warning');
+      return;
+    }
+
+    this.showAlert('⏳ Téléversement vers le serveur en cours...', 'info');
+
     let uploadedCount = 0;
     let failedCount = 0;
-    const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB par fichier initial (sera compressé)
 
-    // Afficher un message de chargement
-    this.showAlert('⏳ Traitement et compression en cours...', 'info');
-
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      
-      // Vérifier la taille du fichier
-      if (file.size > MAX_FILE_SIZE) {
-        alert(`⚠️ Fichier trop volumineux: ${file.name}\n\nTaille maximale: 50MB\nTaille du fichier: ${(file.size / (1024 * 1024)).toFixed(2)}MB`);
-        failedCount++;
-        continue;
-      }
-      
-      // Détecter le type de fichier (image ou vidéo)
-      const mediaType = file.type.startsWith('image') ? 'image' : 
-                        file.type.startsWith('video') ? 'video' : null;
-
-      if (!mediaType) {
-        console.warn(`Fichier ignoré: ${file.name} (type non supporté)`);
-        failedCount++;
-        continue;
-      }
-
-      if (mediaType === 'image') {
-        // Compression automatique des images
-        this.compressAndUploadImage(file, i, files.length, () => {
-          uploadedCount++;
-          this.finalizeUpload(uploadedCount, failedCount, files.length);
-        }, () => {
-          failedCount++;
-          this.finalizeUpload(uploadedCount, failedCount, files.length);
-        });
-      } else {
-        // Pour les vidéos, pas de compression (trop lourd pour le navigateur)
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const media = {
-            id: 'media-' + Date.now() + '-' + i,
-            image: e.target.result,
-            type: mediaType,
-            isDefault: false,
-            timestamp: Date.now(),
-            filename: file.name
-          };
-
-          this.photos.push(media);
-          uploadedCount++;
-          this.finalizeUpload(uploadedCount, failedCount, files.length);
-        };
-
-        reader.onerror = () => {
-          console.error(`Erreur lors de la lecture du fichier: ${file.name}`);
-          failedCount++;
-          this.finalizeUpload(uploadedCount, failedCount, files.length);
-        };
-
-        reader.readAsDataURL(file);
-      }
-    }
-  }
-
-  compressAndUploadImage(file, index, totalFiles, onSuccess, onError) {
-    const reader = new FileReader();
-    
-    reader.onload = (e) => {
-      const img = new Image();
-      img.onload = () => {
-        // Calculer les nouvelles dimensions (max 1920px de largeur)
-        let width = img.width;
-        let height = img.height;
-        const maxWidth = 1920;
-        const maxHeight = 1920;
-        
-        if (width > maxWidth || height > maxHeight) {
-          const ratio = Math.min(maxWidth / width, maxHeight / height);
-          width = Math.floor(width * ratio);
-          height = Math.floor(height * ratio);
-        }
-        
-        // Créer un canvas pour la compression
-        const canvas = document.createElement('canvas');
-        canvas.width = width;
-        canvas.height = height;
-        
-        const ctx = canvas.getContext('2d');
-        ctx.drawImage(img, 0, 0, width, height);
-        
-        // Compression progressive jusqu'à ce que l'image soit assez petite
-        let quality = 0.85;
-        let compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        
-        // Si l'image est encore trop grosse, réduire la qualité
-        while (compressedDataUrl.length > 1.5 * 1024 * 1024 && quality > 0.3) {
-          quality -= 0.1;
-          compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        }
-        
-        const media = {
-          id: 'media-' + Date.now() + '-' + index,
-          image: compressedDataUrl,
-          type: 'image',
-          isDefault: false,
-          timestamp: Date.now(),
-          filename: file.name
-        };
-
-        this.photos.push(media);
-        onSuccess();
-      };
-      
-      img.onerror = () => {
-        console.error(`Erreur lors du chargement de l'image: ${file.name}`);
-        onError();
-      };
-      
-      img.src = e.target.result;
-    };
-    
-    reader.onerror = () => {
-      console.error(`Erreur lors de la lecture du fichier: ${file.name}`);
-      onError();
-    };
-    
-    reader.readAsDataURL(file);
-  }
-
-  async finalizeUpload(uploadedCount, failedCount, totalFiles) {
-    if (uploadedCount + failedCount === totalFiles) {
+    for (const file of files) {
       try {
-        await this.savePhotos();
-        this.renderGalery();
-        this.renderPhotosList();
-        document.getElementById('upload-form').reset();
-        
-        let message = '';
-        if (uploadedCount > 0) {
-          message = uploadedCount === 1 
-            ? '✅ Fichier ajouté et optimisé !' 
-            : `✅ ${uploadedCount} fichiers ajoutés et optimisés !`;
-        }
-        if (failedCount > 0) {
-          message += (message ? '\n' : '') + `⚠️ ${failedCount} fichier(s) ignoré(s)`;
-        }
-        
-        this.showAlert(message, uploadedCount > 0 ? 'success' : 'warning');
-      } catch (e) {
-        if (e.name === 'QuotaExceededError') {
-          // L'erreur a déjà été gérée dans savePhotos()
-          document.getElementById('upload-form').reset();
-        } else {
-          throw e;
-        }
+        await this.uploadOneFile(file);
+        uploadedCount += 1;
+      } catch (error) {
+        console.error(`Upload impossible pour ${file.name}:`, error);
+        failedCount += 1;
       }
     }
+
+    await this.loadPhotos();
+    this.renderGalery();
+    this.renderPhotosList();
+    document.getElementById('upload-form').reset();
+
+    let message = '';
+    if (uploadedCount > 0) {
+      message = uploadedCount === 1
+        ? '✅ 1 fichier ajouté sur le serveur'
+        : `✅ ${uploadedCount} fichiers ajoutés sur le serveur`;
+    }
+    if (failedCount > 0) {
+      message += (message ? '\n' : '') + `⚠️ ${failedCount} fichier(s) refusé(s)`;
+    }
+
+    this.showAlert(message || 'Aucun fichier ajouté.', uploadedCount > 0 ? 'success' : 'warning');
   }
 
-  deletePhoto(photoId) {
-    if (confirm('Supprimer cette photo ?')) {
-      this.photos = this.photos.filter(p => p.id !== photoId);
-      this.savePhotos()
-        .then(() => {
-          this.renderGalery();
-          this.renderPhotosList();
-          this.showAlert('Photo supprimée !', 'info');
-        })
-        .catch((error) => {
-          console.error('Erreur lors de la suppression:', error);
-          this.showAlert('La suppression a échoué.', 'danger');
-        });
+  async uploadOneFile(file) {
+    const mediaType = file.type.startsWith('image/')
+      ? 'image'
+      : file.type.startsWith('video/')
+        ? 'video'
+        : null;
+
+    if (!mediaType) {
+      throw new Error('Type non supporté');
+    }
+
+    if (mediaType === 'image') {
+      const blob = await this.compressImage(file);
+      const filename = this.buildUploadName(file.name, 'jpg');
+      return this.sendUpload(blob, filename);
+    }
+
+    const ext = this.getExtensionFromMime(file.type) || this.getExtensionFromName(file.name) || 'mp4';
+    const filename = this.buildUploadName(file.name, ext);
+    return this.sendUpload(file, filename);
+  }
+
+  compressImage(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        const img = new Image();
+
+        img.onload = () => {
+          let width = img.width;
+          let height = img.height;
+          const maxWidth = 1920;
+          const maxHeight = 1920;
+
+          if (width > maxWidth || height > maxHeight) {
+            const ratio = Math.min(maxWidth / width, maxHeight / height);
+            width = Math.floor(width * ratio);
+            height = Math.floor(height * ratio);
+          }
+
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          canvas.toBlob((blob) => {
+            if (!blob) {
+              reject(new Error('Compression impossible'));
+              return;
+            }
+            resolve(blob);
+          }, 'image/jpeg', 0.85);
+        };
+
+        img.onerror = () => reject(new Error('Image illisible'));
+        img.src = e.target.result;
+      };
+
+      reader.onerror = () => reject(new Error('Lecture fichier impossible'));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  buildUploadName(originalName, extension) {
+    const base = originalName
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 40) || 'media';
+
+    const suffix = `${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
+    return `${base}-${suffix}.${extension}`;
+  }
+
+  getExtensionFromMime(mime) {
+    const map = {
+      'image/jpeg': 'jpg',
+      'image/jpg': 'jpg',
+      'image/png': 'png',
+      'image/gif': 'gif',
+      'image/webp': 'webp',
+      'video/mp4': 'mp4',
+      'video/webm': 'webm',
+      'video/ogg': 'ogv',
+      'video/quicktime': 'mov'
+    };
+
+    return map[mime] || '';
+  }
+
+  getExtensionFromName(name) {
+    const parts = name.split('.');
+    if (parts.length < 2) return '';
+    return parts.pop().toLowerCase();
+  }
+
+  async sendUpload(fileLike, filename) {
+    const formData = new FormData();
+    formData.append('action', 'upload');
+    formData.append('media', fileLike, filename);
+    formData.append('filename', filename);
+
+    await this.apiRequest('upload', {
+      method: 'POST',
+      body: formData
+    });
+  }
+
+  async deletePhoto(photoId) {
+    const photo = this.photos.find((item) => item.id === photoId);
+    if (!photo) {
+      return;
+    }
+
+    if (!confirm('Supprimer cette photo ?')) {
+      return;
+    }
+
+    if (photo.isDefault) {
+      this.showAlert('Les images de base ne se suppriment pas depuis l\'admin.', 'warning');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('action', 'delete');
+    formData.append('id', photoId);
+
+    try {
+      await this.apiRequest('delete', {
+        method: 'POST',
+        body: formData
+      });
+
+      await this.loadPhotos();
+      this.renderGalery();
+      this.renderPhotosList();
+      this.showAlert('Photo supprimée !', 'info');
+    } catch (error) {
+      console.error('Erreur lors de la suppression:', error);
+      this.showAlert('La suppression a échoué.', 'danger');
     }
   }
 
-  // ===== AFFICHAGE DE LA GALERIE =====
+  // ===== AFFICHAGE =====
   renderGalery() {
     const grid = document.getElementById('galery-grid');
+    if (!grid) return;
 
     if (this.photos.length === 0) {
       grid.innerHTML = '';
@@ -486,24 +482,16 @@ class GaleryManager {
 
     grid.innerHTML = this.photos.map((media, index) => {
       const isVideo = media.type === 'video';
-      let thumbnail = media.image;
-      
-      // Pour les vidéos, on peut extraire un preview si disponible
-      // Sinon on affiche une image de placeholder
-      let content;
-      
-      if (isVideo) {
-        content = `
-          <video class="galery-item-img" style="height: 100%; width: 100%; object-fit: cover; background: #000;">
+      const content = isVideo
+        ? `
+          <video class="galery-item-img" style="height: 100%; width: 100%; object-fit: cover; background: #000;" muted playsinline preload="metadata">
             <source src="${media.image}" type="video/mp4">
           </video>
           <div class="video-badge">📹 VIDÉO</div>
-        `;
-      } else {
-        content = `
+        `
+        : `
           <img src="${media.image}" alt="Réalisation" class="galery-item-img" loading="lazy">
         `;
-      }
 
       return `
         <a href="javascript:void(0)" class="galery-item" onclick="galeryManager.openLightbox(${index}); return false;">
@@ -515,7 +503,8 @@ class GaleryManager {
 
   renderPhotosList() {
     const list = document.getElementById('photos-list');
-    
+    if (!list) return;
+
     if (this.photos.length === 0) {
       list.innerHTML = '<p class="text-muted">Aucune photo ou vidéo</p>';
       return;
@@ -524,13 +513,9 @@ class GaleryManager {
     list.innerHTML = this.photos.map((media, index) => {
       const isVideo = media.type === 'video';
       const mediaLabel = isVideo ? '📹 Vidéo' : '🖼️ Photo';
-      
-      let thumbnail;
-      if (isVideo) {
-        thumbnail = `<video class="photo-thumbnail" style="background: #000;"><source src="${media.image}"></video>`;
-      } else {
-        thumbnail = `<img src="${media.image}" alt="Aperçu" class="photo-thumbnail">`;
-      }
+      const thumbnail = isVideo
+        ? `<video class="photo-thumbnail" style="background: #000;" muted playsinline preload="metadata"><source src="${media.image}"></video>`
+        : `<img src="${media.image}" alt="Aperçu" class="photo-thumbnail">`;
 
       return `
         <div class="list-group-item">
@@ -551,26 +536,29 @@ class GaleryManager {
 
   // ===== UTILITAIRES =====
   showAlert(message, type) {
-    const message_html = `
+    if (!message) return;
+
+    const container = document.getElementById('admin-panel');
+    if (!container) return;
+
+    const alertHtml = `
       <div class="alert alert-${type} alert-dismissible fade show" role="alert">
         ${message}
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
       </div>
     `;
-    
-    const alertContainer = document.getElementById('admin-panel');
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = message_html;
-    alertContainer.insertBefore(tempDiv.firstElementChild, alertContainer.firstChild);
-    
+
+    const wrapper = document.createElement('div');
+    wrapper.innerHTML = alertHtml;
+    container.insertBefore(wrapper.firstElementChild, container.firstChild);
+
     setTimeout(() => {
-      const alert = alertContainer.querySelector('.alert');
+      const alert = container.querySelector('.alert');
       if (alert) alert.remove();
     }, 3000);
   }
 }
 
-// Initialiser le gestionnaire de galerie quand la page est chargée
 let galeryManager;
 document.addEventListener('DOMContentLoaded', () => {
   galeryManager = new GaleryManager();
