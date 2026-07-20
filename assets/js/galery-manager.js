@@ -13,6 +13,12 @@ class GaleryManager {
 
   async init() {
     this.setupEventListeners();
+    if (window.location.protocol === 'file:') {
+      this.showAlert(
+        'La gestion admin nécessite un serveur PHP. Ouvre le site via un hébergement PHP ou un serveur local, pas en double-cliquant sur `index.html`.',
+        'warning'
+      );
+    }
     await this.loadPhotos();
     this.renderGalery();
     this.createLightbox();
@@ -27,11 +33,16 @@ class GaleryManager {
       url.searchParams.set('action', action);
     }
 
-    const response = await fetch(url.toString(), {
-      method,
-      body,
-      credentials: 'same-origin'
-    });
+    let response;
+    try {
+      response = await fetch(url.toString(), {
+        method,
+        body,
+        credentials: 'same-origin'
+      });
+    } catch (error) {
+      throw new Error('API PHP inaccessible. Vérifie que le site est servi par un serveur PHP.');
+    }
 
     let data = null;
     try {
@@ -269,7 +280,9 @@ class GaleryManager {
       this.showAlert('Connexion admin réussie.', 'success');
     } catch (error) {
       errorMsg.style.display = 'block';
-      errorMsg.textContent = 'Mot de passe incorrect';
+      errorMsg.textContent = error.message === 'Mot de passe incorrect'
+        ? 'Mot de passe incorrect'
+        : 'Backend PHP inaccessible';
       document.getElementById('admin-password').classList.add('is-invalid');
     }
   }
