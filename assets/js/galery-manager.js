@@ -5,9 +5,11 @@
 
 class GaleryManager {
   constructor() {
-    this.API_URL = 'forms/gallery-api.php';
+    this.API_URL = window.GALLERY_API_URL || '';
+    this.AUTH_STORAGE_KEY = 'petiot_gallery_admin_token';
     this.photos = this.getDefaultPhotos();
     this.currentPhotoIndex = 0;
+    this.authToken = localStorage.getItem(this.AUTH_STORAGE_KEY) || '';
     this.isAuthenticated = false;
   }
 
@@ -15,7 +17,13 @@ class GaleryManager {
     this.setupEventListeners();
     if (window.location.protocol === 'file:') {
       this.showAlert(
-        'La gestion admin nécessite un serveur PHP. Ouvre le site via un hébergement PHP ou un serveur local, pas en double-cliquant sur `index.html`.',
+        'La gestion admin nécessite un backend externe configuré. Ouvre le site en ligne et renseigne l\'URL du backend dans la configuration.',
+        'warning'
+      );
+    }
+    if (!this.API_URL) {
+      this.showAlert(
+        'Backend non configuré. Définis `window.GALLERY_API_URL` pour activer l\'upload et la connexion admin.',
         'warning'
       );
     }
@@ -26,11 +34,20 @@ class GaleryManager {
 
   // ===== API =====
   async apiRequest(action, options = {}) {
+    if (!this.API_URL) {
+      throw new Error('Backend non configuré');
+    }
+
     const { method = 'GET', body = null } = options;
     const url = new URL(this.API_URL, window.location.href);
+    const headers = new Headers(options.headers || {});
 
     if (method === 'GET') {
       url.searchParams.set('action', action);
+    }
+
+    if (this.authToken) {
+      headers.set('Authorization', `Bearer ${this.authToken}`);
     }
 
     let response;
@@ -38,10 +55,10 @@ class GaleryManager {
       response = await fetch(url.toString(), {
         method,
         body,
-        credentials: 'same-origin'
+        headers
       });
     } catch (error) {
-      throw new Error('API PHP inaccessible. Vérifie que le site est servi par un serveur PHP.');
+      throw new Error('Backend externe inaccessible.');
     }
 
     let data = null;
@@ -234,6 +251,8 @@ class GaleryManager {
         this.isAuthenticated = true;
         this.showAdminPanel();
       } else {
+        this.authToken = '';
+        localStorage.removeItem(this.AUTH_STORAGE_KEY);
         this.showPasswordForm();
       }
     } catch (error) {
@@ -268,21 +287,25 @@ class GaleryManager {
     formData.append('password', password);
 
     try {
-      await this.apiRequest('login', {
+      const data = await this.apiRequest('login', {
         method: 'POST',
         body: formData
       });
 
+      this.authToken = data.token || '';
+      localStorage.setItem(this.AUTH_STORAGE_KEY, this.authToken);
       this.isAuthenticated = true;
       errorMsg.style.display = 'none';
       document.getElementById('admin-password').classList.remove('is-invalid');
       this.showAdminPanel();
       this.showAlert('Connexion admin réussie.', 'success');
     } catch (error) {
+      this.authToken = '';
+      localStorage.removeItem(this.AUTH_STORAGE_KEY);
       errorMsg.style.display = 'block';
       errorMsg.textContent = error.message === 'Mot de passe incorrect'
         ? 'Mot de passe incorrect'
-        : 'Backend PHP inaccessible';
+        : 'Backend externe inaccessible';
       document.getElementById('admin-password').classList.add('is-invalid');
     }
   }
@@ -297,7 +320,7 @@ class GaleryManager {
       return;
     }
 
-    if (!this.isAuthenticated) {
+    if (!this.isAuthenticated || !this.authToken) {
       this.showAlert('Vous devez être connecté pour ajouter des médias.', 'warning');
       return;
     }
@@ -460,6 +483,11 @@ class GaleryManager {
 
     if (photo.isDefault) {
       this.showAlert('Les images de base ne se suppriment pas depuis l\'admin.', 'warning');
+      return;
+    }
+
+    if (!this.isAuthenticated || !this.authToken) {
+      this.showAlert('Vous devez être connecté pour supprimer des médias.', 'warning');
       return;
     }
 
