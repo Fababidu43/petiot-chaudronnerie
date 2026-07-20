@@ -7,13 +7,17 @@ class GaleryManager {
   constructor() {
     this.PASSWORD = 'FABIAN';
     this.STORAGE_KEY = 'petiot_galery_photos';
-    this.photos = this.loadPhotos();
+    this.DB_NAME = 'petiot_galery_db';
+    this.DB_VERSION = 1;
+    this.STORE_NAME = 'gallery_state';
+    this.photos = this.getDefaultPhotos();
     this.currentPhotoIndex = 0;
-    this.init();
+    this.db = null;
   }
 
-  init() {
+  async init() {
     this.setupEventListeners();
+    await this.loadPhotos();
     this.renderGalery();
     this.createLightbox();
   }
@@ -151,17 +155,27 @@ class GaleryManager {
   }
 
   // ===== GESTION DES PHOTOS =====
-  loadPhotos() {
+  async loadPhotos() {
+    const indexedPhotos = await this.loadPhotosFromIndexedDB();
+    if (Array.isArray(indexedPhotos)) {
+      this.photos = indexedPhotos;
+      return this.photos;
+    }
+
     const stored = localStorage.getItem(this.STORAGE_KEY);
     if (stored) {
       try {
-        return JSON.parse(stored);
+        const parsed = JSON.parse(stored);
+        this.photos = Array.isArray(parsed) ? parsed : this.getDefaultPhotos();
+        await this.savePhotosToIndexedDB(this.photos);
+        return this.photos;
       } catch (e) {
         console.error('Erreur lors du chargement des photos:', e);
-        return this.getDefaultPhotos();
       }
     }
-    return this.getDefaultPhotos();
+
+    this.photos = this.getDefaultPhotos();
+    return this.photos;
   }
 
   getDefaultPhotos() {
@@ -187,26 +201,93 @@ class GaleryManager {
     ];
   }
 
-  savePhotos() {
+  async savePhotos() {
+    let indexedDbSaved = false;
     try {
-      const data = JSON.stringify(this.photos);
-      const sizeInMB = new Blob([data]).size / (1024 * 1024);
-      
-      // Limite à 9.5MB (localStorage fait environ 10MB)
-      if (sizeInMB > 9.5) {
-        throw new Error('QUOTA_WARNING');
-      }
-      
-      localStorage.setItem(this.STORAGE_KEY, data);
-    } catch (e) {
-      if (e.name === 'QuotaExceededError' || e.message === 'QUOTA_WARNING') {
-        alert('⚠️ Espace de stockage saturé !\n\nLe navigateur ne peut plus stocker de photos/vidéos.\n\nSolution :\n• Supprimez d\'anciennes photos/vidéos pour libérer de l\'espace\n• Les vidéos prennent beaucoup plus d\'espace que les photos\n\nEspace utilisé : ' + (new Blob([JSON.stringify(this.photos)]).size / (1024 * 1024)).toFixed(2) + ' MB / ~10 MB max');
-        // Recharger les anciennes photos depuis le storage
-        this.photos = this.loadPhotos();
-        throw e;
-      }
-      throw e;
+      await this.savePhotosToIndexedDB(this.photos);
+      indexedDbSaved = true;
+    } catch (idbError) {
+      console.warn('IndexedDB indisponible, fallback localStorage:', idbError);
     }
+
+    try {
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.photos));
+    } catch (localError) {
+      console.warn('Impossible de sauvegarder dans localStorage:', localError);
+      if (!indexedDbSaved) {
+        if (localError && localError.name === 'QuotaExceededError') {
+          alert('⚠️ Espace de stockage saturé !\n\nLe navigateur ne peut plus stocker ces médias.\n\nSolution :\n• Supprimez d\'anciennes photos/vidéos\n• Préférez des images plus légères');
+        }
+        throw localError;
+      }
+    }
+  }
+
+  openDatabase() {
+    if (!('indexedDB' in window)) {
+      return Promise.reject(new Error('IndexedDB non supporté'));
+    }
+
+    return new Promise((resolve, reject) => {
+      const request = indexedDB.open(this.DB_NAME, this.DB_VERSION);
+
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(this.STORE_NAME)) {
+          db.createObjectStore(this.STORE_NAME);
+        }
+      };
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error('Erreur ouverture IndexedDB'));
+    });
+  }
+
+  async loadPhotosFromIndexedDB() {
+    try {
+      const db = await this.openDatabase();
+      this.db = db;
+
+      return await new Promise((resolve, reject) => {
+        const tx = db.transaction(this.STORE_NAME, 'readonly');
+        const store = tx.objectStore(this.STORE_NAME);
+        const request = store.get('photos');
+
+        request.onsuccess = () => {
+          resolve(request.result || null);
+        };
+
+        request.onerror = () => reject(request.error || new Error('Erreur lecture IndexedDB'));
+        tx.oncomplete = () => db.close();
+        tx.onerror = () => {
+          db.close();
+          reject(tx.error || new Error('Erreur transaction IndexedDB'));
+        };
+      });
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async savePhotosToIndexedDB(photos) {
+    const db = await this.openDatabase();
+
+    return await new Promise((resolve, reject) => {
+      const tx = db.transaction(this.STORE_NAME, 'readwrite');
+      const store = tx.objectStore(this.STORE_NAME);
+      store.put(photos, 'photos');
+
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+
+      tx.onerror = () => {
+        const error = tx.error || new Error('Erreur écriture IndexedDB');
+        db.close();
+        reject(error);
+      };
+    });
   }
 
   handlePhotoUpload() {
@@ -348,10 +429,10 @@ class GaleryManager {
     reader.readAsDataURL(file);
   }
 
-  finalizeUpload(uploadedCount, failedCount, totalFiles) {
+  async finalizeUpload(uploadedCount, failedCount, totalFiles) {
     if (uploadedCount + failedCount === totalFiles) {
       try {
-        this.savePhotos();
+        await this.savePhotos();
         this.renderGalery();
         this.renderPhotosList();
         document.getElementById('upload-form').reset();
@@ -381,10 +462,16 @@ class GaleryManager {
   deletePhoto(photoId) {
     if (confirm('Supprimer cette photo ?')) {
       this.photos = this.photos.filter(p => p.id !== photoId);
-      this.savePhotos();
-      this.renderGalery();
-      this.renderPhotosList();
-      this.showAlert('Photo supprimée !', 'info');
+      this.savePhotos()
+        .then(() => {
+          this.renderGalery();
+          this.renderPhotosList();
+          this.showAlert('Photo supprimée !', 'info');
+        })
+        .catch((error) => {
+          console.error('Erreur lors de la suppression:', error);
+          this.showAlert('La suppression a échoué.', 'danger');
+        });
     }
   }
 
@@ -487,4 +574,7 @@ class GaleryManager {
 let galeryManager;
 document.addEventListener('DOMContentLoaded', () => {
   galeryManager = new GaleryManager();
+  galeryManager.init().catch((error) => {
+    console.error('Erreur d\'initialisation de la galerie:', error);
+  });
 });
